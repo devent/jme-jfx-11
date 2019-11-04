@@ -165,70 +165,7 @@ public class JmeFXInputListener implements RawInputListener {
 
     @Override
     public void onKeyEvent(final KeyInputEvent event) {
-
-        final RawInputListener adapter = getRawInputListener();
-        if (adapter != null) adapter.onKeyEvent(event);
-
-        final JmeFxContainerInternal container = getContainer();
-        final EmbeddedSceneInterface sceneInterface = container.getSceneInterface();
-        if (sceneInterface == null) return;
-
-        final BitSet keyStateSet = getKeyStateSet();
-
-        final char[][] keyCharArray = getKeyCharArray();
-        final char[] keyCharSet = getKeyCharSet();
-        final char keyChar = event.getKeyChar();
-
-        final int keyCode = event.getKeyCode();
-
-        int fxKeyCode = keyCode == KeyInput.KEY_UNKNOWN ? KeyEvent.VK_UNDEFINED : AwtKeyInput.convertJmeCode(keyCode);
-
-        final int keyState = retrieveKeyState();
-
-        if (fxKeyCode > keyCharSet.length) {
-            switch (keyChar) {
-                case '\\': {
-                    fxKeyCode = KeyEvent.VK_BACK_SLASH;
-                    break;
-                }
-                default: {
-                    return;
-                }
-            }
-        }
-
-        if (container.isFocused()) {
-            event.setConsumed();
-        }
-
-        if (event.isRepeating()) {
-
-            final char x = keyCharSet[fxKeyCode];
-
-            if (container.isFocused()) {
-                sceneInterface.keyEvent(AbstractEvents.KEYEVENT_TYPED, fxKeyCode, keyCharArray[x], keyState);
-            }
-
-        } else if (event.isPressed()) {
-
-            keyCharSet[fxKeyCode] = keyChar;
-            keyStateSet.set(fxKeyCode);
-
-            if (container.isFocused()) {
-                sceneInterface.keyEvent(AbstractEvents.KEYEVENT_PRESSED, fxKeyCode, keyCharArray[keyChar], keyState);
-                sceneInterface.keyEvent(AbstractEvents.KEYEVENT_TYPED, fxKeyCode, keyCharArray[keyChar], keyState);
-            }
-
-        } else {
-
-            final char x = keyCharSet[fxKeyCode];
-
-            keyStateSet.clear(fxKeyCode);
-
-            if (container.isFocused()) {
-                sceneInterface.keyEvent(AbstractEvents.KEYEVENT_RELEASED, fxKeyCode, keyCharArray[x], keyState);
-            }
-        }
+        return;
     }
 
     @Override

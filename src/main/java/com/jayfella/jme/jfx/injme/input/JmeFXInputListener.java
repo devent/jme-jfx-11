@@ -4,23 +4,29 @@
  */
 package com.jayfella.jme.jfx.injme.input;
 
+import static java.util.Objects.requireNonNull;
+
+import java.awt.event.KeyEvent;
+import java.util.BitSet;
+
+import com.jayfella.jme.jfx.injme.JmeFxContainerInternal;
+import com.jayfella.jme.jfx.injme.JmeFxDnDHandler;
+import com.jayfella.jme.jfx.util.JfxPlatform;
 import com.jme3.app.Application;
 import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.RawInputListener;
 import com.jme3.input.awt.AwtKeyInput;
-import com.jme3.input.event.*;
-import com.jayfella.jme.jfx.injme.JmeFxContainerInternal;
-import com.jayfella.jme.jfx.injme.JmeFxDnDHandler;
-import com.jayfella.jme.jfx.util.JfxPlatform;
+import com.jme3.input.event.JoyAxisEvent;
+import com.jme3.input.event.JoyButtonEvent;
+import com.jme3.input.event.KeyInputEvent;
+import com.jme3.input.event.MouseButtonEvent;
+import com.jme3.input.event.MouseMotionEvent;
+import com.jme3.input.event.TouchEvent;
 import com.sun.javafx.embed.AbstractEvents;
 import com.sun.javafx.embed.EmbeddedSceneInterface;
+
 import javafx.scene.Scene;
-
-import java.awt.event.KeyEvent;
-import java.util.BitSet;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Converts Jme Events to JavaFx Events
@@ -165,7 +171,72 @@ public class JmeFXInputListener implements RawInputListener {
 
     @Override
     public void onKeyEvent(final KeyInputEvent event) {
-        return;
+
+        final RawInputListener adapter = getRawInputListener();
+        if (adapter != null)
+            adapter.onKeyEvent(event);
+
+        final JmeFxContainerInternal container = getContainer();
+        final EmbeddedSceneInterface sceneInterface = container.getSceneInterface();
+        if (sceneInterface == null)
+            return;
+
+        final BitSet keyStateSet = getKeyStateSet();
+
+        final char[][] keyCharArray = getKeyCharArray();
+        final char[] keyCharSet = getKeyCharSet();
+        final char keyChar = event.getKeyChar();
+
+        final int keyCode = event.getKeyCode();
+
+        int fxKeyCode = keyCode == KeyInput.KEY_UNKNOWN ? KeyEvent.VK_UNDEFINED : AwtKeyInput.convertJmeCode(keyCode);
+
+        final int keyState = retrieveKeyState();
+
+        if (fxKeyCode > keyCharSet.length) {
+            switch (keyChar) {
+            case '\\': {
+                fxKeyCode = KeyEvent.VK_BACK_SLASH;
+                break;
+            }
+            default: {
+                return;
+            }
+            }
+        }
+
+        if (container.isFocused()) {
+            event.setConsumed();
+        }
+
+        if (event.isRepeating()) {
+
+            final char x = keyCharSet[fxKeyCode];
+
+            if (container.isFocused()) {
+                sceneInterface.keyEvent(AbstractEvents.KEYEVENT_TYPED, fxKeyCode, keyCharArray[x], keyState);
+            }
+
+        } else if (event.isPressed()) {
+
+            keyCharSet[fxKeyCode] = keyChar;
+            keyStateSet.set(fxKeyCode);
+
+            if (container.isFocused()) {
+                sceneInterface.keyEvent(AbstractEvents.KEYEVENT_PRESSED, fxKeyCode, keyCharArray[keyChar], keyState);
+                sceneInterface.keyEvent(AbstractEvents.KEYEVENT_TYPED, fxKeyCode, keyCharArray[keyChar], keyState);
+            }
+
+        } else {
+
+            final char x = keyCharSet[fxKeyCode];
+
+            keyStateSet.clear(fxKeyCode);
+
+            if (container.isFocused()) {
+                sceneInterface.keyEvent(AbstractEvents.KEYEVENT_RELEASED, fxKeyCode, keyCharArray[x], keyState);
+            }
+        }
     }
 
     @Override
